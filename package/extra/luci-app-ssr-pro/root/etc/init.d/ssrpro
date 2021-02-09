@@ -201,9 +201,9 @@ log-size 64K
 log-file $SMTDNS_LOG
 log-num 1
 log-level error
-server-tcp $safe_dns
-server-tcp 208.67.222.222:5353
-server-tls 8.8.8.8:853
+server-tcp $safe_dns -check-edns
+server-tcp 208.67.222.222:5353 -check-edns
+server-tls 8.8.8.8:853 -check-edns
 EOF
 	$SMTDNS -c $SMTDNS_CONF -p $SMTDNS_PID
 
