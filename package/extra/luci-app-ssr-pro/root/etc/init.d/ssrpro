@@ -72,22 +72,22 @@ start() {
 	# -----------------------------------------------------------------
 	###### shadowsocksr ######
 	mkdir -p "$(dirname "$SSRCONF")"
-	cat >$SSRCONF <<EOF
-{
-    "server": "$vt_server_addr",
-    "server_port": $vt_server_port,
-    "password": "$vt_password",
-    "method": "$vt_method",
-    "local_address": "0.0.0.0",
-    "local_port": $SS_REDIR_PORT,
-    "timeout": $vt_timeout,
-    "protocol": "$vt_protocol",
-    "protocol_param": "$vt_protoparam",
-    "obfs": "$vt_obfs",
-    "obfs_param": "$obfs_param",
-    "fast_open": false
-}
-EOF
+	cat >$SSRCONF <<-EOF
+		{
+		    "server": "$vt_server_addr",
+		    "server_port": $vt_server_port,
+		    "password": "$vt_password",
+		    "method": "$vt_method",
+		    "local_address": "0.0.0.0",
+		    "local_port": $SS_REDIR_PORT,
+		    "timeout": $vt_timeout,
+		    "protocol": "$vt_protocol",
+		    "protocol_param": "$vt_protoparam",
+		    "obfs": "$vt_obfs",
+		    "obfs_param": "$obfs_param",
+		    "fast_open": false
+		}
+	EOF
 
 	/usr/bin/ssr-redir -u -c "$SSRCONF" -f $SS_REDIR_PIDFILE || return 1
 
@@ -122,9 +122,9 @@ EOF
 	###### Restart main 'dnsmasq' service if needed ######
 	if ls /var/etc/dnsmasq-go.d/* >/dev/null 2>&1; then
 		mkdir -p /tmp/dnsmasq.d
-		cat >/tmp/dnsmasq.d/dnsmasq-go.conf <<EOF
-conf-dir=/var/etc/dnsmasq-go.d
-EOF
+		cat >/tmp/dnsmasq.d/dnsmasq-go.conf <<-EOF
+			conf-dir=/var/etc/dnsmasq-go.d
+		EOF
 		/etc/init.d/dnsmasq restart
 	fi
 
@@ -190,21 +190,21 @@ start_smtdns() {
 	mkdir -p $SMTDNS_PATH
 	rm -rf $SMTDNS_PATH/*
 	ln -s /usr/sbin/smartdns $SMTDNS
-	cat >$SMTDNS_CONF <<EOF
-server-name smtdns-ssrpro
-bind :$SMTDNS_LOCAL_PORT
-bind-tcp :$SMTDNS_LOCAL_PORT
-prefetch-domain yes
-serve-expired yes
-rr-ttl-min 300
-log-size 64K
-log-file $SMTDNS_LOG
-log-num 1
-log-level error
-server-tcp $safe_dns -check-edns
-server-tcp 208.67.222.222:5353 -check-edns
-server-tls 8.8.8.8:853 -check-edns
-EOF
+	cat >$SMTDNS_CONF <<-EOF
+		server-name smtdns-ssrpro
+		bind :$SMTDNS_LOCAL_PORT
+		bind-tcp :$SMTDNS_LOCAL_PORT
+		prefetch-domain yes
+		serve-expired yes
+		rr-ttl-min 300
+		log-size 64K
+		log-file $SMTDNS_LOG
+		log-num 1
+		log-level error
+		server-tcp $safe_dns -check-edns
+		server-tcp 208.67.222.222:5353 -check-edns
+		server-tls 8.8.8.8:853 -check-edns
+	EOF
 	$SMTDNS -c $SMTDNS_CONF -p $SMTDNS_PID
 
 	# Access TCP DNS server through Shadowsocksr tunnel
@@ -227,11 +227,13 @@ stop_smtdns() {
 add_cron() {
 	sed -i '/up-gfwlist.sh/d' $CRON_FILE
 	sed -i '/shadowsocksr_watchdog.log/d' $CRON_FILE
-	if [ "$cron_mode" -eq 1 ]; then
+	[ "$cron_mode" -eq 1 ] && {
 		echo '0 4 * * * /etc/shadowsocksr/up-gfwlist.sh > /tmp/gfwupdate.log 2>&1' >>$CRON_FILE
-	fi
-	echo '*/30 * * * * /etc/shadowsocksr/ssr-watchdog >> /tmp/shadowsocksr_watchdog.log 2>&1' >>$CRON_FILE
-	echo '0 4 * * * echo "" > /tmp/shadowsocksr_watchdog.log' >>$CRON_FILE
+	}
+	{
+		echo '*/30 * * * * /etc/shadowsocksr/ssr-watchdog >> /tmp/shadowsocksr_watchdog.log 2>&1'
+		echo '0 4 * * * echo "" > /tmp/shadowsocksr_watchdog.log'
+	} >>$CRON_FILE
 	/etc/init.d/cron restart
 }
 
